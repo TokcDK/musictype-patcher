@@ -29,8 +29,8 @@ namespace MusicTypePatcher
             if (lhs.FormKey != rhs.FormKey)
                 return false;
 
-            var lhset = lhs.ContainedFormLinks.ToHashSet();
-            var rhset = rhs.ContainedFormLinks.ToHashSet();
+            var lhset = lhs.EnumerateFormLinks().ToHashSet();
+            var rhset = rhs.EnumerateFormLinks().ToHashSet();
             return lhset.IsSupersetOf(rhset);
         }
 
@@ -38,7 +38,7 @@ namespace MusicTypePatcher
         {
             using var loadOrder = state.LoadOrder;
             var query = loadOrder.PriorityOrder.OnlyEnabled().WinningOverrides<IMusicTypeGetter>()
-                .Select(record => record.AsLink().ResolveAll(state.LinkCache).Reverse())
+                .Select(record => record.ToLink().ResolveAll(state.LinkCache).Reverse())
                 .Where(records => !records.Window(2).All(window => IsSupersetOf(window.Last(), window.First())))
                 .ToDictionary(records => state.PatchMod.MusicTypes.GetOrAddAsOverride(records.First()), records => records.Skip(1));
                 
@@ -55,8 +55,8 @@ namespace MusicTypePatcher
 
                 foreach (var musicType in overrides)
                 {
-                    temp.AddRange(copy.ContainedFormLinks);
-                    var keys = musicType.ContainedFormLinks.Where(link => !link.FormKey.IsNull && !temp.Remove(link)).Select(link => link.FormKey);
+                    temp.AddRange(copy.EnumerateFormLinks());
+                    var keys = musicType.EnumerateFormLinks().Where(link => !link.FormKey.IsNull && !temp.Remove(link)).Select(link => link.FormKey);
                     copy.Tracks.AddRange(keys);
                     temp.Clear();
                 }
